@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     // Create the product
     const product = await whopsdk.products.create({
       company_id: companyId,
-      name: `${name} - ${licenseType.charAt(0).toUpperCase() + licenseType.slice(1)} License`,
+      title: `${name} - ${licenseType.charAt(0).toUpperCase() + licenseType.slice(1)} License`,
       description: license ?? undefined,
       plan_options: {
         plan_type: "one_time",
