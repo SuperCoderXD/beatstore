@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { uploadToBackblaze } from "@/lib/backblaze";
+import { promises as fs } from "fs";
+import path from "path";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,11 +17,24 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "No files provided" }, { status: 400 });
     }
 
+    // Create upload directory
+    const uploadDir = path.join(process.cwd(), "public", "uploads", beatId, licenseType);
+    await fs.mkdir(uploadDir, { recursive: true });
+
     const uploadedFiles: string[] = [];
 
     for (const file of files) {
-      const publicUrl = await uploadToBackblaze(file, beatId, licenseType);
-      uploadedFiles.push(publicUrl);
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      
+      const filename = `${Date.now()}_${file.name}`;
+      const filepath = path.join(uploadDir, filename);
+      
+      await fs.writeFile(filepath, buffer);
+      
+      // Store the public URL path
+      const publicPath = `/uploads/${beatId}/${licenseType}/${filename}`;
+      uploadedFiles.push(publicPath);
     }
 
     return Response.json({ 
