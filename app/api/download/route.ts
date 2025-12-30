@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { getDownloadUrl } from "@/lib/backblaze";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,8 +8,9 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "fileId is required" }, { status: 400 });
     }
 
-    // Generate temporary download URL (valid for 1 hour)
-    const downloadUrl = await getDownloadUrl(fileId);
+    // For now, return a placeholder download URL
+    // In the future, this could integrate with your file storage solution
+    const downloadUrl = `/uploads/${fileId}`;
 
     return Response.json({ 
       success: true, 
