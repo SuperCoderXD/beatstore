@@ -1,0 +1,36 @@
+[
+  {
+    "id": "beat_1767035277623",
+    "title": "[FREE] Nine Vicious Type Beat - \"U Classy?\"",
+    "youtubeUrl": "https://www.youtube.com/watch?v=m1zeZcBppQ4",
+    "thumbnailUrl": "https://img.youtube.com/vi/m1zeZcBppQ4/mqdefault.jpg",
+    "slug": "free-nine-vicious-type-beat-u-classy",
+    "whopProductIds": {
+      "basic": "prod_evNAaIDzTBwHj",
+      "premium": "prod_kNBtL2E99gs77",
+      "unlimited": "prod_xg8aPWn6OBavx"
+    },
+    "whopPurchaseUrls": {
+      "basic": "https://whop.com/checkout/plan_ToRBnF8cI09FH",
+      "premium": "https://whop.com/checkout/plan_cC1ka1fwN3jUK",
+      "unlimited": "https://whop.com/checkout/plan_zo83wvkDrPik2"
+    },
+    "prices": {
+      "basic": 0,
+      "premium": 0,
+      "unlimited": 0
+    },
+    "licenses": {
+      "basic": "",
+      "premium": "",
+      "unlimited": ""
+    },
+    "assets": {
+      "basicFiles": [],
+      "premiumFiles": [],
+      "unlimitedFiles": []
+    },
+    "createdAt": "2025-12-29T19:07:57.623Z",
+    "listed": true
+  }
+]
