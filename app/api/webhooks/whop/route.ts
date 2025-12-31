@@ -47,27 +47,24 @@ export async function POST(request: NextRequest) {
 
     // Trigger Google Apps Script to send contract email
     try {
-      const scriptUrl = `https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec`;
+      const scriptUrl = `https://script.google.com/macros/s/${process.env.GOOGLE_SCRIPT_ID}/exec`;
       
-      const scriptPayload = {
-        functionName: "sendContractEmail",
-        parameters: {
-          buyerName,
-          buyerEmail,
-          beatTitle,
-          licenseType,
-          price,
-          purchaseDate
-        }
-      };
-
       const response = await fetch(scriptUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.GOOGLE_APPS_SCRIPT_TOKEN}`
         },
-        body: JSON.stringify(scriptPayload)
+        body: JSON.stringify({
+          functionName: "sendContractEmail",
+          parameters: {
+            buyerName,
+            buyerEmail,
+            beatTitle,
+            licenseType,
+            price,
+            purchaseDate
+          }
+        })
       });
 
       const result = await response.json();

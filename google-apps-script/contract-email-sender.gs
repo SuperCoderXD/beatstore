@@ -231,7 +231,26 @@ function sendContractEmail(buyerName, buyerEmail, beatTitle, licenseType, price,
 // Webhook handler function
 function doPost(e) {
   try {
-    const data = JSON.parse(e.postData.contents);
+    const requestData = JSON.parse(e.postData.contents);
+    
+    // Handle direct function calls from webhook
+    if (requestData.functionName === "sendContractEmail") {
+      const params = requestData.parameters;
+      
+      const result = sendContractEmail(
+        params.buyerName,
+        params.buyerEmail,
+        params.beatTitle,
+        params.licenseType,
+        params.price,
+        params.purchaseDate
+      );
+      
+      return ContentService.createTextOutput(JSON.stringify(result));
+    }
+    
+    // Handle direct Whop webhook (alternative approach)
+    const data = requestData;
     
     // Verify this is a Whop webhook
     if (data.type !== "payment.succeeded") {
