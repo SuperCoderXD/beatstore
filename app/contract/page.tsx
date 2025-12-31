@@ -125,14 +125,38 @@ const ContractContent = () => {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold mb-2">Sign Your Contract</h1>
             <p className="text-gray-400">Please review and sign your beat license agreement</p>
+            <p className="text-sm text-gray-500 mt-2">
+              You'll be redirected to Inkless to securely sign your contract
+            </p>
           </div>
           
-          <div className="bg-gray-900 rounded-lg p-4">
-            <iframe
-              src={signingUrl}
-              className="w-full h-screen min-h-[600px] border-0 rounded"
-              title="Contract Signing"
-            />
+          <div className="bg-gray-900 rounded-lg p-8 text-center">
+            <div className="mb-6">
+              <FileText className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Ready to Sign</h2>
+              <p className="text-gray-400 mb-4">
+                Your contract has been prepared with Inkless secure e-signature service
+              </p>
+            </div>
+            
+            <a
+              href={signingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors flex items-center gap-2 mx-auto"
+            >
+              <FileText className="w-5 h-5" />
+              Sign Contract with Inkless
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+            
+            <div className="mt-6 text-sm text-gray-500">
+              <p>✅ Legally binding e-signature</p>
+              <p>✅ Automatic email delivery</p>
+              <p>✅ Secure and encrypted</p>
+            </div>
           </div>
         </div>
       </div>

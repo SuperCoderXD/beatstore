@@ -1,23 +1,23 @@
 import { NextRequest } from "next/server";
 
-// OpenSign API configuration
-const OPENSIGN_API_URL = "https://api.opensignlabs.com/v1";
-const OPENSIGN_API_KEY = process.env.OPENSIGN_API_KEY;
+// Inkless API configuration
+const INKLESS_API_URL = "https://api.useinkless.com";
+const INKLESS_API_KEY = process.env.INKLESS_API_KEY;
 
 export async function POST(request: NextRequest) {
   try {
     const { contractData, licenseTerms } = await request.json();
 
-    if (!OPENSIGN_API_KEY) {
+    if (!INKLESS_API_KEY) {
       return Response.json({ 
-        error: "OpenSign API key not configured" 
+        error: "Inkless API key not configured" 
       }, { status: 500 });
     }
 
     const { beat, license, price, name, email, transactionId, date, producerName, producerEmail } = contractData;
     const currentTerms = licenseTerms?.[license as keyof typeof licenseTerms] || licenseTerms?.basic;
 
-    // Generate contract HTML
+    // Create HTML contract content
     const contractHTML = `
       <!DOCTYPE html>
       <html>
@@ -123,28 +123,41 @@ export async function POST(request: NextRequest) {
       </html>
     `;
 
-    // Create document with OpenSign
-    const documentResponse = await fetch(`${OPENSIGN_API_URL}/documents`, {
+    // First, create a template in Inkless
+    const templateResponse = await fetch(`${INKLESS_API_URL}/createNewTemplate`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENSIGN_API_KEY}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'x-api-key': INKLESS_API_KEY
       },
       body: JSON.stringify({
-        title: `${beat} - ${license.charAt(0).toUpperCase() + license.slice(1)} License Agreement`,
+        name: `${beat} - ${license.charAt(0).toUpperCase() + license.slice(1)} License Template`,
         content: contractHTML,
-        signers: [{
-          name: name,
+        description: `Beat license agreement for ${beat} - ${license} license`
+      })
+    });
+
+    if (!templateResponse.ok) {
+      const errorData = await templateResponse.text();
+      console.error('Inkless Template API Error:', errorData);
+      throw new Error('Failed to create template with Inkless');
+    }
+
+    const templateData = await templateResponse.json();
+
+    // Then create a document from the template
+    const documentResponse = await fetch(`${INKLESS_API_URL}/createFromTemplate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': INKLESS_API_KEY
+      },
+      body: JSON.stringify({
+        templateId: templateData.templateId,
+        recipients: [{
           email: email,
-          role: 'Licensee',
-          order: 1
+          name: name
         }],
-        settings: {
-          allow_comments: false,
-          require_signature: true,
-          auto_reminders: true,
-          reminder_interval: 24
-        },
         metadata: {
           beat_title: beat,
           license_type: license,
@@ -157,35 +170,18 @@ export async function POST(request: NextRequest) {
 
     if (!documentResponse.ok) {
       const errorData = await documentResponse.text();
-      console.error('OpenSign API Error:', errorData);
-      throw new Error('Failed to create document with OpenSign');
+      console.error('Inkless Document API Error:', errorData);
+      throw new Error('Failed to create document with Inkless');
     }
 
     const documentData = await documentResponse.json();
 
-    // Send the document for signing
-    const sendResponse = await fetch(`${OPENSIGN_API_URL}/documents/${documentData.id}/send`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENSIGN_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message: `Please sign your beat license agreement for "${beat}"`
-      })
-    });
-
-    if (!sendResponse.ok) {
-      throw new Error('Failed to send document for signing');
-    }
-
-    const sendData = await sendResponse.json();
-
     return Response.json({
       success: true,
-      documentId: documentData.id,
-      signingUrl: sendData.signing_url,
-      message: "Contract created and sent for signing"
+      documentId: documentData.documentId,
+      templateId: templateData.templateId,
+      signingUrl: documentData.signingUrl || `https://app.useinkless.com/sign/${documentData.documentId}`,
+      message: "Contract created and sent for signing via Inkless"
     });
 
   } catch (error: any) {
