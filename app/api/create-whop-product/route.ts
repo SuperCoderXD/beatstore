@@ -56,34 +56,27 @@ export async function POST(request: NextRequest) {
       }
       
       if (askQuestions) {
-        updateData.require_questions = true;
-        // Add default questions for buyer info
-        updateData.questions = [
-          {
-            question: "Full Name",
-            required: true,
-            type: "text"
-          },
-          {
-            question: "Email",
-            required: true,
-            type: "email"
-          }
-        ];
+        updateData.ask_questions = askQuestions;
       }
-
-      await whopsdk.products.update({
-        company_id: companyId,
-        product_id: product.id,
-        ...updateData
-      });
+      
+      if (Object.keys(updateData).length > 0) {
+        await whopsdk.products.update(product.id, updateData);
+      }
     }
     
-    return Response.json({ 
-      success: true, 
-      id: product.id, 
-      product,
-      purchase_url: firstPlan?.purchase_url,
+    // Set default redirect to agreement page if not provided
+    const agreementUrl = `${process.env.NEXTAUTH_URL}/agreement?beat=${encodeURIComponent(name)}&license=${licenseType}&price=${price}`;
+    
+    return Response.json({
+      success: true,
+      product: {
+        id: product.id,
+        title: product.title,
+        description: product.description,
+        purchase_url: firstPlan?.purchase_url || `https://whop.com/products/${product.id}`,
+        agreement_url: agreementUrl
+      },
+      message: "Product created successfully"
     });
 
   } catch (error: any) {
