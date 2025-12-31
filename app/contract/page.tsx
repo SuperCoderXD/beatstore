@@ -18,10 +18,10 @@ const ContractContent = () => {
     const price = searchParams.get('price');
     const name = searchParams.get('name');
     const email = searchParams.get('email');
-    const transactionId = searchParams.get('transaction_id') || searchParams.get('id');
+    const transactionId = searchParams.get('transaction_id') || searchParams.get('id') || undefined;
 
     if (beat && license && name && email) {
-      loadContractData(beat, license, price, name, email, transactionId);
+      loadContractData(beat, license, price || '0', name, email, transactionId);
     } else {
       setLoading(false);
     }
