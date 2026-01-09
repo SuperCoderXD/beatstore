@@ -1,42 +1,30 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Play, Music, ChevronDown } from 'lucide-react';
-import BeatCard from '../components/BeatCard';
+import { Search, Play, Instagram, Youtube } from 'lucide-react';
 
 interface BeatRecord {
   id: string;
   title: string;
   youtubeUrl: string;
   thumbnailUrl?: string;
-  slug?: string;
-  whopProductIds: {
-    basic: string;
-    premium: string;
-    unlimited: string;
-  };
   prices: {
     basic: number;
     premium: number;
     unlimited: number;
   };
-  licenses: {
+  whopProductIds: {
     basic: string;
     premium: string;
     unlimited: string;
   };
-  assets: {
-    basicFiles: string[];
-    premiumFiles: string[];
-    unlimitedFiles: string[];
-  };
-  createdAt: string;
-  listed?: boolean; // Add listed field
 }
 
-export default function Page() {
+const BeatStore = () => {
   const [beats, setBeats] = useState<BeatRecord[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
     fetchBeats();
@@ -47,8 +35,8 @@ export default function Page() {
       const response = await fetch('/api/save-beat');
       const data = await response.json();
       if (data.success) {
-        // Only show beats that are listed
-        const listedBeats = data.beats.filter((beat: BeatRecord) => beat.listed !== false);
+        // Only show listed beats
+        const listedBeats = data.beats.filter((beat: any) => beat.listed === true);
         setBeats(listedBeats);
       }
     } catch (error) {
@@ -58,116 +46,228 @@ export default function Page() {
     }
   };
 
-  const scrollToBeats = () => {
-    const element = document.getElementById('beat-grid');
-    element?.scrollIntoView({ behavior: 'smooth' });
+  const getThumbnailUrl = (url: string) => {
+    const videoId = url.split('v=')[1]?.split('&')[0];
+    return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
   };
+
+  const filteredBeats = beats.filter(beat =>
+    beat.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleBeatClick = (beatId: string) => {
+    window.location.href = `/beat/${beatId}`;
+  };
+
+  const latestBeat = beats[0];
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Background gradient */}
-        <div className="min-h-screen bg-linear-to-br from-gray-900 via-purple-900 to-gray-900 p-8" />
-        
-        {/* Animated background elements */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
-        </div>
-
-        <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-          <div className="mb-8">
-            <div className="inline-flex items-center gap-2 bg-purple-600/20 border border-purple-500/30 rounded-full px-4 py-2 mb-6">
-              <Music className="w-4 h-4 text-purple-400" />
-              <span className="text-purple-300 text-sm font-medium">Professional Beat Store</span>
-            </div>
-            
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 bg-linear-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
-              Premium Quality Beats
-              <br />
-              for Professional Artists
-            </h1>
-            
-            <p className="text-xl sm:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
-              Instant download, professional quality, royalty-free beats for your next hit
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <a
-                href="/upload"
-                className="group relative px-8 py-4 bg-linear-to-r from-purple-600 to-blue-600 rounded-lg font-semibold text-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-purple-600/25"
-              >
-                Upload Your Beat
-              </a>
-              <a
-                href="/manage"
-                className="group relative px-8 py-4 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold text-lg transition-all duration-300"
-              >
-                Manage Beats
-              </a>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+      {/* Header */}
+      <header className="border-b border-zinc-900 bg-black/90 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+          <h1 className="text-3xl font-bold tracking-tight">
+            <span className="text-gradient">TNC</span>
+            <span className="text-white ml-2">Rockstar</span>
+          </h1>
+          <div className="flex items-center gap-6">
             <button
-              onClick={scrollToBeats}
-              className="group relative px-8 py-4 bg-linear-to-r from-purple-600 to-blue-600 rounded-lg font-semibold text-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-purple-600/25"
+              onClick={() => setShowAbout(true)}
+              className="text-zinc-400 hover:text-white transition-colors font-medium"
             >
-              <span className="flex items-center gap-2">
-                Browse Our Collection
-                <ChevronDown className="w-5 h-5 group-hover:translate-y-1 transition-transform" />
-              </span>
+              About
             </button>
             <a
-              href="/upload"
-              className="px-8 py-4 border border-gray-700 rounded-lg font-semibold text-lg hover:border-purple-500 hover:bg-purple-600/10 transition-all duration-300"
+              href="https://www.instagram.com/tncrockstar"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 bg-linear-to-r from-red-600 via-red-500 to-red-600 hover:from-red-500 hover:via-red-400 hover:to-red-500 px-5 py-2.5 rounded-xl font-semibold transition-all glow-red"
             >
-              Sell Your Beats
+              <Instagram size={18} />
+              Instant Replies 📩
             </a>
           </div>
         </div>
+      </header>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <ChevronDown className="w-6 h-6 text-gray-500" />
-        </div>
-      </section>
-
-      {/* Beat Grid Section */}
-      <section id="beat-grid" className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold mb-4">Available Beats</h2>
-            <p className="text-xl text-gray-400">Click any beat to preview and purchase licenses</p>
-          </div>
-
-          {loading ? (
-            <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-            </div>
-          ) : beats.length === 0 ? (
-            <div className="text-center py-20">
-              <Music className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-2xl font-semibold text-gray-400 mb-2">No beats available yet</h3>
-              <p className="text-gray-500 mb-8">Be the first to upload a beat to the store</p>
+      {/* About Modal */}
+      {showAbout && (
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-950 rounded-2xl p-8 max-w-md w-full border-2 border-red-900/30 shadow-2xl">
+            <div className="text-center mb-6">
+              <img 
+                src="/images/profilepic.jpg" 
+                alt="TNC Rockstar" 
+                className="w-32 h-32 rounded-full mx-auto mb-4 object-cover shadow-lg glow-red"
+              />
+              <h2 className="text-3xl font-bold mb-2 text-gradient">TNC Rockstar</h2>
+              <p className="text-zinc-400 mb-6 font-medium">Hip Hop Producer</p>
               <a
-                href="/upload"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors"
+                href="https://www.youtube.com/@tncrockstar"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-red-500 hover:text-red-400 transition-colors font-semibold"
               >
-                <Play className="w-4 h-4" />
-                Upload Your First Beat
+                <Youtube size={20} />
+                Visit My YouTube Channel
               </a>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {beats.map((beat) => (
-                <BeatCard key={beat.id} beat={beat} />
-              ))}
-            </div>
-          )}
+            <button
+              onClick={() => setShowAbout(false)}
+              className="w-full bg-zinc-900 hover:bg-zinc-800 border border-red-900/30 py-3 rounded-xl transition-colors font-semibold"
+            >
+              Close
+            </button>
+          </div>
         </div>
-      </section>
+      )}
+
+      {/* Hero Banner */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0">
+          <img 
+            src="/images/banner.jpg" 
+            alt="TNC Rockstar Banner" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-linear-to-b from-black/60 via-black/40 to-black"></div>
+        </div>
+        <div className="relative w-full py-24 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-6xl font-bold mb-4 text-gradient">Iconic Beats to Make History.</h2>
+            <p className="text-xl text-zinc-300 font-medium tracking-wide">High Quality • Instant Delivery</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="max-w-4xl mx-auto px-6 -mt-8 relative z-10">
+        <div className="relative group">
+          <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-zinc-500 group-focus-within:text-red-500 transition-colors" size={22} />
+          <input
+            type="text"
+            placeholder="Search beats by name or keyword..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-zinc-950 backdrop-blur-xl border-2 border-zinc-900 rounded-2xl pl-14 pr-6 py-5 text-white placeholder-zinc-500 focus:outline-none focus:border-red-600 focus:glow-red transition-all font-medium"
+          />
+        </div>
+      </div>
+
+      {/* Latest Beat Showcase */}
+      {latestBeat && !searchQuery && (
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
+            <span className="text-gradient">🔥 Latest Drop</span>
+          </h2>
+          <div className="bg-zinc-950 rounded-3xl overflow-hidden border-2 border-red-900/20 hover:border-red-600/50 transition-all cursor-pointer group card-hover shadow-2xl">
+            <div className="grid md:grid-cols-2 gap-8 p-8">
+              <div className="relative aspect-video rounded-2xl overflow-hidden shadow-xl ring-2 ring-red-900/20">
+                <img
+                  src={latestBeat.thumbnailUrl || getThumbnailUrl(latestBeat.youtubeUrl)}
+                  alt={latestBeat.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-red-950/20 to-transparent flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Play className="w-20 h-20 text-white drop-shadow-lg" />
+                </div>
+              </div>
+              <div className="flex flex-col justify-between">
+                <div>
+                  <h3 className="text-4xl font-bold mb-6 leading-tight">{latestBeat.title}</h3>
+                  <div className="flex gap-4 mb-8">
+                    <div className="bg-zinc-900 border border-red-900/30 rounded-xl px-5 py-3 flex-1">
+                      <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1 font-semibold">Basic</p>
+                      <p className="text-2xl font-bold text-gradient">${latestBeat.prices.basic}</p>
+                    </div>
+                    <div className="bg-zinc-900 border border-red-900/30 rounded-xl px-5 py-3 flex-1">
+                      <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1 font-semibold">Premium</p>
+                      <p className="text-2xl font-bold text-gradient">${latestBeat.prices.premium}</p>
+                    </div>
+                    <div className="bg-zinc-900 border border-red-900/30 rounded-xl px-5 py-3 flex-1">
+                      <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1 font-semibold">Unlimited</p>
+                      <p className="text-2xl font-bold text-gradient">${latestBeat.prices.unlimited}</p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleBeatClick(latestBeat.id)}
+                  className="bg-linear-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 py-5 rounded-xl font-bold text-lg transition-all w-full shadow-lg hover:shadow-red-600/50"
+                >
+                  View & Purchase
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* All Beats Grid */}
+      <div className="max-w-7xl mx-auto px-6 py-16">
+        <h2 className="text-3xl font-bold mb-8">
+          {searchQuery ? (
+            <span>
+              Search Results <span className="text-gradient">({filteredBeats.length})</span>
+            </span>
+          ) : (
+            <span className="text-gradient">All Beats</span>
+          )}
+        </h2>
+        
+        {loading ? (
+          <div className="flex items-center justify-center py-32">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-zinc-900 border-t-red-600"></div>
+              <div className="absolute inset-0 rounded-full bg-red-600/20 blur-xl"></div>
+            </div>
+          </div>
+        ) : filteredBeats.length === 0 ? (
+          <div className="text-center py-32">
+            <div className="text-6xl mb-4">🔍</div>
+            <p className="text-zinc-400 text-xl font-medium">No beats found matching "{searchQuery}"</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredBeats.map((beat) => (
+              <div
+                key={beat.id}
+                onClick={() => handleBeatClick(beat.id)}
+                className="bg-zinc-950 rounded-2xl overflow-hidden border-2 border-red-900/20 hover:border-red-600/50 transition-all cursor-pointer group card-hover shadow-xl"
+              >
+                <div className="relative aspect-video overflow-hidden">
+                  <img
+                    src={beat.thumbnailUrl || getThumbnailUrl(beat.youtubeUrl)}
+                    alt={beat.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/80 via-red-950/20 to-transparent flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Play className="w-14 h-14 text-white drop-shadow-lg" />
+                  </div>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-bold text-xl mb-4 truncate">{beat.title}</h3>
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-500 text-sm font-semibold uppercase tracking-wider">From</span>
+                    <span className="text-3xl font-bold text-gradient">${beat.prices.basic}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <footer className="border-t border-zinc-900 mt-32 bg-black/90 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-6 py-12 text-center">
+          <p className="text-zinc-400 font-medium">© 2026 TNC Rockstar. All rights reserved.</p>
+          <p className="mt-3 text-sm text-zinc-500 font-mono">
+            Instant delivery • Professional quality • Secure checkout
+          </p>
+        </div>
+      </footer>
     </div>
   );
-}
+};
+
+export default BeatStore;

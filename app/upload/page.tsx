@@ -1,15 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Upload, X, Check, AlertCircle } from 'lucide-react';
+import { Upload, X, Check, AlertCircle, LogOut } from 'lucide-react';
+import { useAuth } from '../components/AuthProvider';
+import AuthGuard from '../components/AuthGuard';
 
 const UploadPage = () => {
+  const { logout } = useAuth();
   const [uploadData, setUploadData] = useState({
     title: '',
     youtubeUrl: '',
-    basicPrice: 0,
-    premiumPrice: 0,
-    unlimitedPrice: 0,
+    basicPrice: 35,
+    premiumPrice: 50,
+    unlimitedPrice: 150,
   });
 
   const [isUploading, setIsUploading] = useState(false);
@@ -20,11 +23,11 @@ const UploadPage = () => {
     const { name, value } = e.target;
     setUploadData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name.includes('Price') ? Number(value) : value
     }));
   };
 
-  const createWhopProduct = async (name: string, price: number, licenseType: string) => {
+  const createWhopProduct = async (name: string, price: number, licenseType: string, beatId: string) => {
     const response = await fetch('/api/create-whop-product', {
       method: 'POST',
       headers: {
@@ -35,7 +38,7 @@ const UploadPage = () => {
         price,
         license: '', // Empty - you'll add manually
         licenseType,
-        redirectUrl: `${window.location.origin}/thank-you?beatId=beat_${Date.now()}&license=${licenseType}&status=success`,
+        redirectUrl: `${window.location.origin}/thank-you?beatId=${beatId}&license=${licenseType}&status=success`,
         askQuestions: true // Enable buyer name collection
       })
     });
@@ -52,23 +55,22 @@ const UploadPage = () => {
     setIsUploading(true);
     setUploadProgress(0);
 
+    // Generate a unique beat ID once at the beginning
+    const beatId = `beat_${Date.now()}`;
+
     try {
       // Create Whop products for each license type
       const products = await Promise.all([
-        createWhopProduct(uploadData.title, uploadData.basicPrice, 'basic'),
-        createWhopProduct(uploadData.title, uploadData.premiumPrice, 'premium'),
-        createWhopProduct(uploadData.title, uploadData.unlimitedPrice, 'unlimited')
+        createWhopProduct(uploadData.title, uploadData.basicPrice, 'basic', beatId),
+        createWhopProduct(uploadData.title, uploadData.premiumPrice, 'premium', beatId),
+        createWhopProduct(uploadData.title, uploadData.unlimitedPrice, 'unlimited', beatId)
       ]);
 
       setUploadProgress(25);
 
-      // Generate a unique beat ID
-      const beatId = `beat_${Date.now()}`;
-
-      setUploadProgress(50);
-
       // Save basic beat data (without files)
       const beatPayload = {
+        id: beatId, // Send the beat ID from frontend
         title: uploadData.title,
         youtubeUrl: uploadData.youtubeUrl,
         whopProductIds: {
@@ -144,9 +146,9 @@ const UploadPage = () => {
       setUploadData({
         title: '',
         youtubeUrl: '',
-        basicPrice: 0,
-        premiumPrice: 0,
-        unlimitedPrice: 0,
+        basicPrice: 35,
+        premiumPrice: 50,
+        unlimitedPrice: 150,
       });
 
       alert('Beat created! Now add files and licenses manually in Whop, then click "List Beat" below.');
@@ -182,7 +184,7 @@ const UploadPage = () => {
         )
       );
 
-      alert('Beat listed successfully! It will now appear in the store.');
+      alert('Beat listed successfully! It will now appear in store.');
     } catch (error) {
       console.error('Failed to list beat:', error);
       alert('Failed to list beat. Please try again.');
@@ -223,179 +225,190 @@ const UploadPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-black text-white p-8">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Upload Your Beat</h1>
+    <AuthGuard>
+      <div className="min-h-screen bg-black text-white p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-4xl font-bold">Upload Your Beat</h1>
+            <button
+              onClick={logout}
+              className="flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 px-4 py-2 rounded-lg transition-colors"
+            >
+              <LogOut size={18} />
+              Logout
+            </button>
+          </div>
         
-        <form onSubmit={handleSubmit} className="space-y-8 mb-12">
-          {/* Basic Information */}
-          <div className="bg-gray-900 rounded-lg p-6">
-            <h2 className="text-2xl font-bold mb-6">Basic Information</h2>
-            
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Beat Title</label>
-              <input
-                type="text"
-                name="title"
-                value={uploadData.title}
-                onChange={handleInputChange}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
-                placeholder="Enter beat title..."
-                required
-              />
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">YouTube URL</label>
-              <input
-                type="url"
-                name="youtubeUrl"
-                value={uploadData.youtubeUrl}
-                onChange={handleInputChange}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
-                placeholder="https://youtube.com/watch?v=..."
-                required
-              />
-            </div>
-          </div>
-
-          {/* License Tiers */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <PriceInputSection
-              title="Basic License"
-              licenseType="basic"
-              price={uploadData.basicPrice}
-            />
-            
-            <PriceInputSection
-              title="Premium License"
-              licenseType="premium"
-              price={uploadData.premiumPrice}
-            />
-            
-            <PriceInputSection
-              title="Unlimited License"
-              licenseType="unlimited"
-              price={uploadData.unlimitedPrice}
-            />
-          </div>
-
-          {/* Upload Progress */}
-          {isUploading && (
+          <form onSubmit={handleSubmit} className="space-y-8 mb-12">
+            {/* Basic Information */}
             <div className="bg-gray-900 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-medium">Creating Products...</span>
-                <span className="text-sm text-gray-400">{uploadProgress}%</span>
+              <h2 className="text-2xl font-bold mb-6">Basic Information</h2>
+              
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-2">Beat Title</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={uploadData.title}
+                  onChange={handleInputChange}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                  placeholder="Enter beat title..."
+                  required
+                />
               </div>
-              <div className="w-full bg-gray-700 rounded-full h-2">
-                <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${uploadProgress}%` }}
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-2">YouTube URL</label>
+                <input
+                  type="url"
+                  name="youtubeUrl"
+                  value={uploadData.youtubeUrl}
+                  onChange={handleInputChange}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                  placeholder="https://youtube.com/watch?v=..."
+                  required
                 />
               </div>
             </div>
-          )}
 
-          {/* Submit Button */}
-          <div className="flex justify-center">
-            <button
-              type="submit"
-              disabled={isUploading}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-8 py-3 rounded-lg font-medium transition-colors"
-            >
-              {isUploading ? 'Creating...' : 'Create Beat Products'}
-            </button>
-          </div>
-        </form>
+            {/* License Tiers */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <PriceInputSection
+                title="Basic License"
+                licenseType="basic"
+                price={uploadData.basicPrice}
+              />
+              
+              <PriceInputSection
+                title="Premium License"
+                licenseType="premium"
+                price={uploadData.premiumPrice}
+              />
+              
+              <PriceInputSection
+                title="Unlimited License"
+                licenseType="unlimited"
+                price={uploadData.unlimitedPrice}
+              />
+            </div>
 
-        {/* Uploaded Beats Section */}
-        {uploadedBeats.length > 0 && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Created Beats - Ready for Manual Setup</h2>
-            
-            {uploadedBeats.map((beat) => (
-              <div key={beat.id} className="bg-gray-900 rounded-lg p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">{beat.title}</h3>
-                    <p className="text-gray-400 mb-4">{beat.youtubeUrl}</p>
-                    
-                    <div className="grid grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <span className="text-sm text-gray-400">Basic:</span>
-                        <span className="ml-2 font-bold">${beat.prices.basic}</span>
-                      </div>
-                      <div>
-                        <span className="text-sm text-gray-400">Premium:</span>
-                        <span className="ml-2 font-bold">${beat.prices.premium}</span>
-                      </div>
-                      <div>
-                        <span className="text-sm text-gray-400">Unlimited:</span>
-                        <span className="ml-2 font-bold">${beat.prices.unlimited}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    beat.listed 
-                      ? 'bg-green-600 text-white' 
-                      : 'bg-yellow-600 text-black'
-                  }`}>
-                    {beat.listed ? 'Listed' : 'Pending Setup'}
-                  </div>
+            {/* Upload Progress */}
+            {isUploading && (
+              <div className="bg-gray-900 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-medium">Creating Products...</span>
+                  <span className="text-sm text-gray-400">{uploadProgress}%</span>
                 </div>
-
-                {!beat.listed && (
-                  <div className="bg-yellow-900 bg-opacity-30 border border-yellow-600 rounded-lg p-4 mb-4">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-yellow-400 mt-0.5" />
-                      <div>
-                        <h4 className="font-semibold text-yellow-400 mb-2">Manual Setup Required</h4>
-                        <ol className="text-sm text-gray-300 space-y-1">
-                          <li>1. Add files to each tier in Whop</li>
-                          <li>2. Add license terms for each tier</li>
-                          <li>3. Click "List Beat" when complete</li>
-                        </ol>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex gap-3">
-                  <a
-                    href={beat.whopPurchaseUrls.basic}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Open in Whop
-                  </a>
-                  
-                  {!beat.listed && (
-                    <button
-                      onClick={() => listBeat(beat.id)}
-                      className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                    >
-                      <Check size={16} />
-                      List Beat
-                    </button>
-                  )}
-                  
-                  {beat.listed && (
-                    <a
-                      href={`/beat/${beat.id}`}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      View in Store
-                    </a>
-                  )}
+                <div className="w-full bg-gray-700 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            )}
+
+            {/* Submit Button */}
+            <div className="flex justify-center">
+              <button
+                type="submit"
+                disabled={isUploading}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-8 py-3 rounded-lg font-medium transition-colors"
+              >
+                {isUploading ? 'Creating...' : 'Create Beat Products'}
+              </button>
+            </div>
+          </form>
+
+          {/* Uploaded Beats Section */}
+          {uploadedBeats.length > 0 && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold">Created Beats - Ready for Manual Setup</h2>
+              
+              {uploadedBeats.map((beat) => (
+                <div key={beat.id} className="bg-gray-900 rounded-lg p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-xl font-bold mb-2">{beat.title}</h3>
+                      <p className="text-gray-400 mb-4">{beat.youtubeUrl}</p>
+                      
+                      <div className="grid grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <span className="text-sm text-gray-400">Basic:</span>
+                          <span className="ml-2 font-bold">${beat.prices.basic}</span>
+                        </div>
+                        <div>
+                          <span className="text-sm text-gray-400">Premium:</span>
+                          <span className="ml-2 font-bold">${beat.prices.premium}</span>
+                        </div>
+                        <div>
+                          <span className="text-sm text-gray-400">Unlimited:</span>
+                          <span className="ml-2 font-bold">${beat.prices.unlimited}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      beat.listed 
+                        ? 'bg-green-600 text-white' 
+                        : 'bg-yellow-600 text-black'
+                    }`}>
+                      {beat.listed ? 'Listed' : 'Pending Setup'}
+                    </div>
+                  </div>
+
+                  {!beat.listed && (
+                    <div className="bg-yellow-900 bg-opacity-30 border border-yellow-600 rounded-lg p-4 mb-4">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-yellow-400 mt-0.5" />
+                        <div>
+                          <h4 className="font-semibold text-yellow-400 mb-2">Manual Setup Required</h4>
+                          <ol className="text-sm text-gray-300 space-y-1">
+                            <li>1. Add files to each tier in Whop</li>
+                            <li>2. Add license terms for each tier</li>
+                            <li>3. Click "List Beat" when complete</li>
+                          </ol>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3">
+                    <a
+                      href={beat.whopPurchaseUrls.basic}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Open in Whop
+                    </a>
+                    
+                    {!beat.listed && (
+                      <button
+                        onClick={() => listBeat(beat.id)}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                      >
+                        <Check size={16} />
+                        List Beat
+                      </button>
+                    )}
+                    
+                    {beat.listed && (
+                      <a
+                        href={`/beat/${beat.id}`}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        View in Store
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 };
 

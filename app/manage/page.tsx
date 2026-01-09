@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Trash2, Music, DollarSign, ExternalLink, AlertTriangle, FileText, Settings, Check } from 'lucide-react';
+import { Trash2, Music, DollarSign, ExternalLink, AlertTriangle, FileText, Settings, Check, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '../components/AuthProvider';
+import AuthGuard from '../components/AuthGuard';
 
 interface BeatRecord {
   id: string;
@@ -35,6 +37,7 @@ interface BeatRecord {
 }
 
 export default function ManageBeats() {
+  const { logout } = useAuth();
   const [beats, setBeats] = useState<BeatRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -131,9 +134,19 @@ export default function ManageBeats() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
+    <AuthGuard>
+      <div className="min-h-screen bg-gray-900 p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold text-white">Manage Beats</h1>
+            <button
+              onClick={logout}
+              className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 px-4 py-2 rounded-lg transition-colors text-white"
+            >
+              <LogOut size={18} />
+              Logout
+            </button>
+          </div>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">Manage Beats</h1>
@@ -256,6 +269,6 @@ export default function ManageBeats() {
           </div>
         </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 }

@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
     const now = Date.now();
     const beat: BeatRecord = {
-      id: `beat_${now}`,
+      id: payload.id || `beat_${now}`,
       title: payload.title,
       youtubeUrl: payload.youtubeUrl,
       thumbnailUrl: extractThumbnail(payload.youtubeUrl),

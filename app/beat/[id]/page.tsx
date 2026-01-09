@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Heart, Repeat, Plus, Share, Download, ChevronUp, Mic, Radio, Video, Music, Globe, Headphones, Play } from 'lucide-react';
+import { Heart, Repeat, Plus, Share, Download, ChevronUp, Mic, Radio, Video, Music, Globe, Headphones, Play, ArrowLeft } from 'lucide-react';
 
 interface BeatRecord {
   id: string;
@@ -159,88 +159,64 @@ const BeatPage = () => {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans">
-      <div className="max-w-7xl mx-auto flex">
-        
-        {/* Left Sidebar: Artwork & Info */}
-        <div className="w-72 shrink-0 p-6 border-r border-gray-900">
-          <div className="aspect-square bg-[#1a1a1a] rounded mb-4 overflow-hidden relative">
-            <img 
-              src={getThumbnailUrl(beat.youtubeUrl)} 
-              alt={beat.title}
-              className="w-full h-full object-cover"
-            />
-            <button className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center transition-colors">
-              <Play size={24} fill="white" className="text-white ml-1" />
-            </button>
-          </div>
-          
-          <h1 className="text-lg font-bold leading-tight mb-1">
-            {beat.title}
-          </h1>
-          <p className="text-gray-400 text-sm mb-6">Producer</p>
-          
-          <div className="flex justify-between items-center mb-8 text-gray-400">
-            <div className="flex flex-col items-center gap-1 cursor-pointer hover:text-white">
-              <Heart size={20} />
-              <span className="text-xs">5.8k</span>
-            </div>
-
-            <Plus size={24} className="cursor-pointer hover:text-white" />
-            <Share size={20} className="cursor-pointer hover:text-white" />
-          </div>
-
-          <button className="w-full bg-[#1a1a1a] hover:bg-[#252525] text-white py-3 rounded flex items-center justify-center gap-2 font-medium transition-colors">
-            <Download size={18} />
-            Download for free
-          </button>
+      {/* Main Content - Centered */}
+      <div className="max-w-4xl mx-auto p-8">
+        {/* Back Button - Positioned to the Left */}
+        <div className="mb-6">
+          <a
+            href="/"
+            className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Store
+          </a>
         </div>
 
-        {/* Right Section: YouTube Embed & Licensing */}
-        <div className="flex-1 p-8">
-          {/* YouTube Embed */}
-          <div className="mb-8">
-            <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden">
-              <iframe
-                src={getYouTubeEmbedUrl(beat.youtubeUrl)}
-                title={beat.title}
-                className="w-full h-full"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
+        {/* YouTube Embed - Smaller */}
+        <div className="mb-6">
+          <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden" style={{ maxHeight: '400px' }}>
+            <iframe
+              src={getYouTubeEmbedUrl(beat.youtubeUrl)}
+              title={beat.title}
+              className="w-full h-full"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
           </div>
+        </div>
 
-          {/* Licensing Section */}
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-semibold">Licensing</h2>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <span className="text-[10px] text-gray-500 block tracking-widest">TOTAL :</span>
-                <span className="text-xl font-bold">${currentLicense?.price}</span>
-              </div>
-              <button className="bg-[#1a1a1a] hover:bg-[#252525] px-5 py-2.5 rounded font-medium text-sm transition-colors">
-                Add to Cart
-              </button>
-              <button 
-                onClick={() => handlePurchase(selectedLicense)}
-                className="bg-blue-600 hover:bg-blue-700 px-6 py-2.5 rounded font-medium text-sm transition-colors"
-              >
-                Buy now
-              </button>
-            </div>
+        {/* Beat Title and Purchase Button - Side by Side */}
+        <div className="flex items-center justify-between mb-12">
+          <div>
+            <h1 className="text-3xl font-bold mb-1">{beat.title}</h1>
+            <p className="text-gray-400">TNC Rockstar</p>
           </div>
+          <div className="flex items-center gap-4">
+            <span className="text-gray-300 text-base font-medium">Instant Delivery 🌐</span>
+            <button 
+              onClick={() => handlePurchase(selectedLicense)}
+              className="bg-blue-600 hover:bg-blue-700 border-2 border-blue-500 px-10 py-4 rounded-lg font-bold text-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105"
+            >
+              Buy Now
+            </button>
+          </div>
+        </div>
 
-          {/* License Grid */}
+        {/* Licensing Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold mb-6">Licensing</h2>
+
+          {/* License Grid with Proper Blue Highlight */}
           <div className="grid grid-cols-3 gap-4 mb-12">
             {licenses.map((license) => (
               <div
                 key={license.id}
                 onClick={() => setSelectedLicense(license.id)}
-                className={`p-5 rounded border-2 cursor-pointer transition-all ${
+                className={`p-5 rounded-lg cursor-pointer transition-all ${
                   selectedLicense === license.id 
-                  ? 'border-blue-600 bg-blue-950 bg-opacity-30' 
-                  : 'border-gray-800 bg-transparent hover:border-gray-700'
+                  ? 'border-4 border-blue-500 bg-blue-950 shadow-2xl shadow-blue-500/50 ring-2 ring-blue-400' 
+                  : 'border-2 border-gray-800 bg-gray-900 hover:border-gray-700'
                 }`}
               >
                 <h3 className="font-bold text-base mb-2">{license.title}</h3>
@@ -254,7 +230,6 @@ const BeatPage = () => {
           <div className="border-t border-gray-900 pt-8">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold">Usage Terms</h2>
-              <ChevronUp size={20} className="text-gray-500 cursor-pointer hover:text-white" />
             </div>
             
             <p className="font-bold mb-8">{currentLicense?.title} (${currentLicense?.price})</p>
@@ -272,14 +247,6 @@ const BeatPage = () => {
           </div>
         </div>
       </div>
-
-      {/* Floating Help Button */}
-      <button className="fixed bottom-8 right-8 bg-black border border-gray-800 px-4 py-2.5 rounded-full flex items-center gap-2 shadow-2xl hover:bg-gray-900 transition-colors">
-        <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-          <div className="w-3 h-3 bg-black rounded-full" />
-        </div>
-        <span className="font-bold text-sm">Get Help</span>
-      </button>
     </div>
   );
 };

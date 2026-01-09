@@ -1,5 +1,39 @@
 [
   {
+    "id": "beat_1767978436411",
+    "title": "Nine Vicious Sample Type Beat - \"ONE CHANCE\"",
+    "youtubeUrl": "https://www.youtube.com/watch?v=WR5O7JKsJbc",
+    "thumbnailUrl": "https://img.youtube.com/vi/WR5O7JKsJbc/mqdefault.jpg",
+    "slug": "nine-vicious-sample-type-beat-one-chance",
+    "whopProductIds": {
+      "basic": "prod_70pTOrMg21B7C",
+      "premium": "prod_G4aUNkhMJL3Ld",
+      "unlimited": "prod_SLsiiUxOPvbhz"
+    },
+    "whopPurchaseUrls": {
+      "basic": "https://whop.com/checkout/plan_ONttrwoY7kuLh",
+      "premium": "https://whop.com/checkout/plan_2aLhdhVN1D2vH",
+      "unlimited": "https://whop.com/checkout/plan_ZigHt4GI9xkMj"
+    },
+    "prices": {
+      "basic": 35,
+      "premium": 50,
+      "unlimited": 150
+    },
+    "licenses": {
+      "basic": "",
+      "premium": "",
+      "unlimited": ""
+    },
+    "assets": {
+      "basicFiles": [],
+      "premiumFiles": [],
+      "unlimitedFiles": []
+    },
+    "createdAt": "2026-01-09T17:07:16.411Z",
+    "listed": true
+  },
+  {
     "id": "beat_1767035277623",
     "title": "[FREE] Nine Vicious Type Beat - \"U Classy?\"",
     "youtubeUrl": "https://www.youtube.com/watch?v=m1zeZcBppQ4",
