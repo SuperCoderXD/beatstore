@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Check, AlertCircle, Download, Mail, FileText } from 'lucide-react';
 
-const ThankYouPage = () => {
+const ThankYouContent = () => {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [purchaseData, setPurchaseData] = useState<any>(null);
@@ -270,6 +270,18 @@ const ThankYouPage = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const ThankYouPage = () => {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    }>
+      <ThankYouContent />
+    </Suspense>
   );
 };
 

@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { uploadToBackblaze } from "@/lib/backblaze";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +18,8 @@ export async function POST(request: NextRequest) {
     const uploadedFiles: string[] = [];
 
     for (const file of files) {
-      const publicUrl = await uploadToBackblaze(file, beatId, licenseType);
+      // TODO: Implement file storage solution
+      const publicUrl = `#${file.name}`;
       uploadedFiles.push(publicUrl);
     }
 

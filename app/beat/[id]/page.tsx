@@ -190,13 +190,13 @@ const BeatPage = () => {
         <div className="flex items-center justify-between mb-12">
           <div>
             <h1 className="text-3xl font-bold mb-1">{beat.title}</h1>
-            <p className="text-gray-400">TNC Rockstar</p>
+            <p className="text-zinc-400">TNC Rockstar</p>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-gray-300 text-base font-medium">Instant Delivery 🌐</span>
+            <span className="text-zinc-300 text-base font-medium">Instant Delivery 🌐</span>
             <button 
               onClick={() => handlePurchase(selectedLicense)}
-              className="bg-blue-600 hover:bg-blue-700 border-2 border-blue-500 px-10 py-4 rounded-lg font-bold text-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105"
+              className="bg-red-600 hover:bg-red-700 border-2 border-red-500 px-10 py-4 rounded-lg font-bold text-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105"
             >
               Buy Now
             </button>
