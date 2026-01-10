@@ -70,7 +70,7 @@ export interface BeatRecord {
 
 export async function getBeatsCollection(): Promise<any> {
   const client = await clientPromise
-  const db = client.db('beatstore')
+  const db = client.db('beatstore-data')
   return db.collection('beats')
 }
 
@@ -102,7 +102,7 @@ export async function createBeat(beat: Omit<BeatRecord, '_id'>): Promise<BeatRec
     const client = await clientPromise
     console.log('Connected to MongoDB successfully')
     
-    const db = client.db('beatstore')
+    const db = client.db('beatstore-data')
     const collection = db.collection('beats')
     
     console.log('Inserting beat:', beat.id)
@@ -119,7 +119,9 @@ export async function createBeat(beat: Omit<BeatRecord, '_id'>): Promise<BeatRec
 
 export async function updateBeat(id: string, updates: Partial<BeatRecord>): Promise<BeatRecord | null> {
   try {
-    const collection = await getBeatsCollection()
+    const client = await clientPromise
+    const db = client.db('beatstore-data')
+    const collection = db.collection('beats')
     const result = await collection.findOneAndUpdate(
       { id },
       { $set: updates },
@@ -128,7 +130,7 @@ export async function updateBeat(id: string, updates: Partial<BeatRecord>): Prom
     if (!result) {
       return null
     }
-    return result
+    return result as unknown as BeatRecord
   } catch (error) {
     console.error('Error updating beat:', error)
     throw error
@@ -137,7 +139,9 @@ export async function updateBeat(id: string, updates: Partial<BeatRecord>): Prom
 
 export async function deleteBeat(id: string): Promise<boolean> {
   try {
-    const collection = await getBeatsCollection()
+    const client = await clientPromise
+    const db = client.db('beatstore-data')
+    const collection = db.collection('beats')
     const result = await collection.deleteOne({ id })
     return result.deletedCount > 0
   } catch (error) {
