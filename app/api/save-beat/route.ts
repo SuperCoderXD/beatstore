@@ -1,76 +1,32 @@
 import { NextRequest } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
-
-export interface BeatRecord {
-  id: string;
-  title: string;
-  youtubeUrl: string;
-  thumbnailUrl?: string;
-  slug?: string;
-  whopProductIds: {
-    basic: string;
-    premium: string;
-    unlimited: string;
-  };
-  whopPurchaseUrls?: {
-    basic?: string;
-    premium?: string;
-    unlimited?: string;
-  };
-  prices: {
-    basic: number;
-    premium: number;
-    unlimited: number;
-  };
-  licenses: {
-    basic: string;
-    premium: string;
-    unlimited: string;
-  };
-  assets: {
-    basicFiles: string[];
-    premiumFiles: string[];
-    unlimitedFiles: string[];
-  };
-  createdAt: string;
-  listed?: boolean;
-};
-
-const dataDir = path.join(process.cwd(), "data");
-const dataFile = path.join(dataDir, "beats.json");
-
-export async function readBeats(): Promise<BeatRecord[]> {
-  try {
-    const raw = await fs.readFile(dataFile, "utf8");
-    return JSON.parse(raw);
-  } catch (err: any) {
-    if (err.code === "ENOENT") {
-      return [];
-    }
-    throw err;
-  }
-}
-
-export async function writeBeats(beats: BeatRecord[]) {
-  await fs.mkdir(dataDir, { recursive: true });
-  await fs.writeFile(dataFile, JSON.stringify(beats, null, 2), "utf8");
-}
-
-export async function GET() {
-  try {
-    const beats = await readBeats();
-    return Response.json({ success: true, beats });
-  } catch (error: any) {
-    return Response.json({ error: error.message }, { status: 500 });
-  }
-}
+import { getWhopSdk } from "@/lib/whop-sdk";
+import { createBeat, getBeats, BeatRecord } from "@/lib/mongodb";
 
 // Extract YouTube thumbnail
 const extractThumbnail = (youtubeUrl: string) => {
   const videoId = youtubeUrl.split('v=')[1]?.split('&')[0];
   return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
 };
+
+export async function GET() {
+  try {
+    const beats = await getBeats();
+    return Response.json({ success: true, beats });
+  } catch (error: any) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}
+
+async function deleteWhopProduct(productId: string): Promise<boolean> {
+  try {
+    const whopsdk = getWhopSdk();
+    await whopsdk.products.delete(productId);
+    return true;
+  } catch (error: any) {
+    console.error(`Failed to delete Whop product ${productId}:`, error);
+    return false;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -112,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     const now = Date.now();
-    const beat: BeatRecord = {
+    const beatData = {
       id: payload.id || `beat_${now}`,
       title: payload.title,
       youtubeUrl: payload.youtubeUrl,
@@ -128,15 +84,22 @@ export async function POST(request: NextRequest) {
         unlimitedFiles: payload.assets?.unlimitedFiles ?? [],
       },
       createdAt: new Date(now).toISOString(),
-      listed: payload.listed ?? false, // Default to false
+      listed: payload.listed ?? false,
     };
 
-    const beats = await readBeats();
-    beats.unshift(beat);
-    await writeBeats(beats);
+    const beat = await createBeat(beatData);
 
-    return Response.json({ success: true, id: beat.id, beat });
+    return Response.json({ 
+      success: true, 
+      id: beat.id, 
+      beat,
+      message: "Beat created successfully in MongoDB database"
+    });
+
   } catch (error: any) {
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error("Failed to save beat:", error);
+    return Response.json({ 
+      error: error.message || "Failed to save beat" 
+    }, { status: 500 });
   }
 }

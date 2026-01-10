@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { readBeats, writeBeats } from "@/app/api/save-beat/route";
+import { getBeats, updateBeat } from "@/lib/mongodb";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,27 +12,17 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "beatId is required" }, { status: 400 });
     }
 
-    // Read all beats
-    const beats = await readBeats();
-    console.log('Available beats:', beats.map(b => b.id));
+    // Update beat to mark as listed
+    const updatedBeat = await updateBeat(beatId, { listed: true });
     
-    // Find and update the beat
-    const beatIndex = beats.findIndex(beat => beat.id === beatId);
-    console.log('Found beat at index:', beatIndex);
-    
-    if (beatIndex === -1) {
+    if (!updatedBeat) {
       return Response.json({ error: "Beat not found" }, { status: 404 });
     }
 
-    // Mark as listed
-    beats[beatIndex].listed = true;
-    
-    // Save back to file
-    await writeBeats(beats);
-
     return Response.json({ 
       success: true, 
-      message: "Beat listed successfully" 
+      message: "Beat listed successfully in MongoDB",
+      beat: updatedBeat
     });
 
   } catch (error: any) {

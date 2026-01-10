@@ -1,0 +1,133 @@
+import { MongoClient, Db, Collection } from 'mongodb'
+
+if (!process.env.MONGODB_URI) {
+  throw new Error('Please add your MongoDB URI to .env.local')
+}
+
+const uri = process.env.MONGODB_URI
+const options = {}
+
+let client: MongoClient
+let clientPromise: Promise<MongoClient>
+
+if (process.env.NODE_ENV === 'development') {
+  let globalWithMongo = global as typeof global & {
+    _mongoClientPromise?: Promise<MongoClient>
+  }
+
+  if (!globalWithMongo._mongoClientPromise) {
+    client = new MongoClient(uri, options)
+    globalWithMongo._mongoClientPromise = client.connect()
+  }
+  clientPromise = globalWithMongo._mongoClientPromise
+} else {
+  client = new MongoClient(uri, options)
+  clientPromise = client.connect()
+}
+
+export default clientPromise
+
+// Database helper functions
+export interface BeatRecord {
+  _id?: string;
+  id: string;
+  title: string;
+  youtubeUrl: string;
+  thumbnailUrl?: string;
+  slug?: string;
+  whopProductIds: {
+    basic: string;
+    premium: string;
+    unlimited: string;
+  };
+  whopPurchaseUrls?: {
+    basic?: string;
+    premium?: string;
+    unlimited?: string;
+  };
+  prices: {
+    basic: number;
+    premium: number;
+    unlimited: number;
+  };
+  licenses: {
+    basic: string;
+    premium: string;
+    unlimited: string;
+  };
+  assets: {
+    basicFiles: string[];
+    premiumFiles: string[];
+    unlimitedFiles: string[];
+  };
+  createdAt: string;
+  listed?: boolean;
+}
+
+export async function getBeatsCollection(): Promise<Collection<BeatRecord>> {
+  const client = await clientPromise
+  const db = client.db('beatstore')
+  return db.collection('beats')
+}
+
+export async function getBeats(): Promise<BeatRecord[]> {
+  try {
+    const collection = await getBeatsCollection()
+    const beats = await collection.find({}).sort({ createdAt: -1 }).toArray()
+    return beats
+  } catch (error) {
+    console.error('Error fetching beats:', error)
+    return []
+  }
+}
+
+export async function getBeat(id: string): Promise<BeatRecord | null> {
+  try {
+    const collection = await getBeatsCollection()
+    const beat = await collection.findOne({ id })
+    return beat
+  } catch (error) {
+    console.error('Error fetching beat:', error)
+    return null
+  }
+}
+
+export async function createBeat(beat: Omit<BeatRecord, '_id'>): Promise<BeatRecord> {
+  try {
+    const collection = await getBeatsCollection()
+    const result = await collection.insertOne(beat as any)
+    return { ...beat, _id: result.insertedId.toString() }
+  } catch (error) {
+    console.error('Error creating beat:', error)
+    throw error
+  }
+}
+
+export async function updateBeat(id: string, updates: Partial<BeatRecord>): Promise<BeatRecord | null> {
+  try {
+    const collection = await getBeatsCollection()
+    const result = await collection.findOneAndUpdate(
+      { id },
+      { $set: updates },
+      { returnDocument: 'after' }
+    )
+    if (!result) {
+      return null
+    }
+    return result
+  } catch (error) {
+    console.error('Error updating beat:', error)
+    throw error
+  }
+}
+
+export async function deleteBeat(id: string): Promise<boolean> {
+  try {
+    const collection = await getBeatsCollection()
+    const result = await collection.deleteOne({ id })
+    return result.deletedCount > 0
+  } catch (error) {
+    console.error('Error deleting beat:', error)
+    throw error
+  }
+}
