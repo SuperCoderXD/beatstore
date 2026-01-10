@@ -24,19 +24,25 @@ async function deleteWhopProduct(productId: string): Promise<boolean> {
     return true;
   } catch (error: any) {
     console.error(`Failed to delete Whop product ${productId}:`, error);
+    console.error("Error stack:", error.stack);
     return false;
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('=== SAVE BEAT API CALLED ===');
+    
     const payload = await request.json();
+    console.log('Received payload:', JSON.stringify(payload, null, 2));
 
     if (!payload?.title || typeof payload.title !== "string") {
+      console.error('Validation error: title is required');
       return Response.json({ error: "title is required" }, { status: 400 });
     }
 
     if (!payload?.youtubeUrl || typeof payload.youtubeUrl !== "string") {
+      console.error('Validation error: youtubeUrl is required');
       return Response.json({ error: "youtubeUrl is required" }, { status: 400 });
     }
 
@@ -46,6 +52,7 @@ export async function POST(request: NextRequest) {
       typeof payload.whopProductIds?.premium !== "string" ||
       typeof payload.whopProductIds?.unlimited !== "string"
     ) {
+      console.error('Validation error: whopProductIds are required');
       return Response.json({ error: "whopProductIds.basic/premium/unlimited are required" }, { status: 400 });
     }
 
@@ -55,6 +62,7 @@ export async function POST(request: NextRequest) {
       typeof payload.prices?.premium !== "number" ||
       typeof payload.prices?.unlimited !== "number"
     ) {
+      console.error('Validation error: prices are required numbers');
       return Response.json({ error: "prices.basic/premium/unlimited are required numbers" }, { status: 400 });
     }
 
@@ -64,9 +72,11 @@ export async function POST(request: NextRequest) {
       typeof payload.licenses?.premium !== "string" ||
       typeof payload.licenses?.unlimited !== "string"
     ) {
+      console.error('Validation error: licenses are required');
       return Response.json({ error: "licenses.basic/premium/unlimited are required" }, { status: 400 });
     }
 
+    console.log('Validation passed, creating beat data...');
     const now = Date.now();
     const beatData = {
       id: payload.id || `beat_${now}`,
@@ -87,7 +97,9 @@ export async function POST(request: NextRequest) {
       listed: payload.listed ?? false,
     };
 
+    console.log('Attempting to save to MongoDB...');
     const beat = await createBeat(beatData);
+    console.log('Beat saved successfully:', beat.id);
 
     return Response.json({ 
       success: true, 
@@ -98,8 +110,10 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error("Failed to save beat:", error);
+    console.error("Error stack:", error.stack);
     return Response.json({ 
-      error: error.message || "Failed to save beat" 
+      error: error.message || "Failed to save beat",
+      details: error.stack 
     }, { status: 500 });
   }
 }

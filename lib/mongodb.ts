@@ -16,11 +16,13 @@ if (process.env.NODE_ENV === 'development') {
   }
 
   if (!globalWithMongo._mongoClientPromise) {
+    console.log('Creating new MongoDB client for development...')
     client = new MongoClient(uri, options)
     globalWithMongo._mongoClientPromise = client.connect()
   }
   clientPromise = globalWithMongo._mongoClientPromise
 } else {
+  console.log('Creating new MongoDB client for production...')
   client = new MongoClient(uri, options)
   clientPromise = client.connect()
 }
@@ -94,11 +96,21 @@ export async function getBeat(id: string): Promise<BeatRecord | null> {
 
 export async function createBeat(beat: Omit<BeatRecord, '_id'>): Promise<BeatRecord> {
   try {
-    const collection = await getBeatsCollection()
-    const result = await collection.insertOne(beat as any)
+    console.log('Connecting to MongoDB...');
+    const client = await clientPromise;
+    console.log('Connected to MongoDB successfully');
+    
+    const db = client.db('beatstore');
+    const collection = db.collection('beats');
+    
+    console.log('Inserting beat:', beat.id);
+    const result = await collection.insertOne(beat as any);
+    console.log('Beat inserted successfully:', result.insertedId);
+    
     return { ...beat, _id: result.insertedId.toString() }
   } catch (error) {
-    console.error('Error creating beat:', error)
+    console.error('Error creating beat in MongoDB:', error);
+    console.error('MongoDB error details:', JSON.stringify(error, null, 2));
     throw error
   }
 }
