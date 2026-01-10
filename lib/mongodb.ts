@@ -1,16 +1,22 @@
-import { MongoClient, Db, Collection } from 'mongodb'
+import { MongoClient } from 'mongodb'
 
 if (!process.env.MONGODB_URI) {
   throw new Error('Please add your MongoDB URI to .env.local')
 }
 
 const uri = process.env.MONGODB_URI
-const options = {}
+const options = {
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+}
 
 let client: MongoClient
 let clientPromise: Promise<MongoClient>
 
 if (process.env.NODE_ENV === 'development') {
+  // In development mode, use a global variable to keep track of the client
+  // This prevents the client from being recreated on every request
   let globalWithMongo = global as typeof global & {
     _mongoClientPromise?: Promise<MongoClient>
   }
@@ -22,6 +28,7 @@ if (process.env.NODE_ENV === 'development') {
   }
   clientPromise = globalWithMongo._mongoClientPromise
 } else {
+  // In production mode, it's best to not use a global variable.
   console.log('Creating new MongoDB client for production...')
   client = new MongoClient(uri, options)
   clientPromise = client.connect()
@@ -66,7 +73,7 @@ export interface BeatRecord {
   listed?: boolean;
 }
 
-export async function getBeatsCollection(): Promise<Collection<BeatRecord>> {
+export async function getBeatsCollection(): Promise<any> {
   const client = await clientPromise
   const db = client.db('beatstore')
   return db.collection('beats')
@@ -96,21 +103,21 @@ export async function getBeat(id: string): Promise<BeatRecord | null> {
 
 export async function createBeat(beat: Omit<BeatRecord, '_id'>): Promise<BeatRecord> {
   try {
-    console.log('Connecting to MongoDB...');
-    const client = await clientPromise;
-    console.log('Connected to MongoDB successfully');
+    console.log('Connecting to MongoDB...')
+    const client = await clientPromise
+    console.log('Connected to MongoDB successfully')
     
-    const db = client.db('beatstore');
-    const collection = db.collection('beats');
+    const db = client.db('beatstore')
+    const collection = db.collection('beats')
     
-    console.log('Inserting beat:', beat.id);
-    const result = await collection.insertOne(beat as any);
-    console.log('Beat inserted successfully:', result.insertedId);
+    console.log('Inserting beat:', beat.id)
+    const result = await collection.insertOne(beat as any)
+    console.log('Beat inserted successfully:', result.insertedId)
     
     return { ...beat, _id: result.insertedId.toString() }
   } catch (error) {
-    console.error('Error creating beat in MongoDB:', error);
-    console.error('MongoDB error details:', JSON.stringify(error, null, 2));
+    console.error('Error creating beat in MongoDB:', error)
+    console.error('MongoDB error details:', JSON.stringify(error, null, 2))
     throw error
   }
 }
