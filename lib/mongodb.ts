@@ -1,44 +1,31 @@
 import { MongoClient } from 'mongodb'
-import { attachDatabasePool } from '@vercel/functions'
 
 if (!process.env.MONGODB_URI) {
   throw new Error('Please add your MongoDB URI to .env.local')
 }
 
 const uri = process.env.MONGODB_URI
-const options = {
-  maxPoolSize: 10,
-  serverSelectionTimeoutMS: 10000,
-  socketTimeoutMS: 45000,
-  // Fix SSL/TLS issues
-  tls: true,
-  tlsAllowInvalidCertificates: false,
-  tlsAllowInvalidHostnames: false,
-  retryWrites: true,
-  w: 'majority' as const
-}
 
 let client: MongoClient
 let clientPromise: Promise<MongoClient>
 
 if (process.env.NODE_ENV === 'development') {
-  // In development mode, use a global variable to keep track of the client
-  // This prevents the client from being recreated on every request
+  // In development mode, use a global variable to keep track of client
+  // This prevents client from being recreated on every request
   let globalWithMongo = global as typeof global & {
     _mongoClientPromise?: Promise<MongoClient>
   }
 
   if (!globalWithMongo._mongoClientPromise) {
     console.log('Creating new MongoDB client for development...')
-    client = new MongoClient(uri, options)
+    client = new MongoClient(uri)
     globalWithMongo._mongoClientPromise = client.connect()
   }
   clientPromise = globalWithMongo._mongoClientPromise
 } else {
   // In production mode, it's best to not use a global variable.
   console.log('Creating new MongoDB client for production...')
-  client = new MongoClient(uri, options)
-  attachDatabasePool(client) // Vercel Functions optimization
+  client = new MongoClient(uri)
   clientPromise = client.connect()
 }
 
