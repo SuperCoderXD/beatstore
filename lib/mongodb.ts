@@ -1,4 +1,5 @@
 import { MongoClient } from 'mongodb'
+import { attachDatabasePool } from '@vercel/functions'
 
 if (!process.env.MONGODB_URI) {
   throw new Error('Please add your MongoDB URI to .env.local')
@@ -31,6 +32,7 @@ if (process.env.NODE_ENV === 'development') {
   // In production mode, it's best to not use a global variable.
   console.log('Creating new MongoDB client for production...')
   client = new MongoClient(uri, options)
+  attachDatabasePool(client) // Vercel Functions optimization
   clientPromise = client.connect()
 }
 
