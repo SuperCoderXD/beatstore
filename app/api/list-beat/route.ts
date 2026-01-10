@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getBeats, updateBeat } from "@/lib/mongodb";
+import { updateBeat } from "@/lib/mongodb";
 
 export async function POST(request: NextRequest) {
   try {

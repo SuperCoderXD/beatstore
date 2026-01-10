@@ -1,8 +1,6 @@
 import { NextRequest } from "next/server";
 import { getWhopSdk } from "@/lib/whop-sdk";
-
-// Fallback storage for immediate functionality
-let fallbackBeats: any[] = [];
+import { getBeats, createBeat } from "@/lib/mongodb";
 
 // Extract YouTube thumbnail
 const extractThumbnail = (youtubeUrl: string) => {
@@ -12,15 +10,8 @@ const extractThumbnail = (youtubeUrl: string) => {
 
 export async function GET() {
   try {
-    // Try MongoDB first, fallback to memory if it fails
-    try {
-      const { getBeats } = await import("@/lib/mongodb");
-      const beats = await getBeats();
-      return Response.json({ success: true, beats });
-    } catch (mongoError: unknown) {
-      console.log('MongoDB failed, using fallback storage:', (mongoError as Error).message);
-      return Response.json({ success: true, beats: fallbackBeats });
-    }
+    const beats = await getBeats();
+    return Response.json({ success: true, beats });
   } catch (error: unknown) {
     return Response.json({ error: (error as Error).message }, { status: 500 });
   }
@@ -105,34 +96,17 @@ export async function POST(request: NextRequest) {
       listed: payload.listed ?? false,
     };
 
-    // Try MongoDB first, fallback to memory storage
-    try {
-      console.log('Attempting to save to MongoDB...');
-      const { createBeat } = await import("@/lib/mongodb");
-      const beat = await createBeat(beatData);
-      console.log('Beat saved successfully to MongoDB:', beat.id);
-      
-      return Response.json({ 
-        success: true, 
-        id: beat.id, 
-        beat: beat,
-        message: "Beat created successfully in MongoDB database"
-      });
-    } catch (mongoError: unknown) {
-      console.log('MongoDB failed, using fallback storage:', (mongoError as Error).message);
-      
-      // Fallback to memory storage
-      fallbackBeats.unshift(beatData);
-      console.log('Beat saved to fallback storage:', beatData.id);
-      
-      return Response.json({ 
-        success: true, 
-        id: beatData.id, 
-        beat: beatData,
-        message: "Beat created successfully (fallback storage)",
-        note: "Using fallback storage - MongoDB will work when configured"
-      });
-    }
+    // Save to MongoDB
+    console.log('Attempting to save to MongoDB...');
+    const beat = await createBeat(beatData);
+    console.log('Beat saved successfully to MongoDB:', beat.id);
+    
+    return Response.json({ 
+      success: true, 
+      id: beat.id, 
+      beat: beat,
+      message: "Beat created successfully in MongoDB database"
+    });
 
   } catch (error: any) {
     console.error("Failed to save beat:", error);
