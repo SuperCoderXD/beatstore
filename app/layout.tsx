@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "TNC Beats",
-	description: "TNC Rockstar Beats - Premium Hip Hop Instrumentals",
+	title: "Wise Beats",
+	description: "Wise Beats — Premium Afro R&B Production",
 	icons: {
 		icon: '/images/icon.ico',
 	},
