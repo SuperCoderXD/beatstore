@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Trash2, Music, DollarSign, ExternalLink, AlertTriangle, FileText, Settings, Check, LogOut } from 'lucide-react';
+import { Trash2, Music, DollarSign, ExternalLink, AlertTriangle, FileText, Settings, Check, LogOut, Copy, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../components/AuthProvider';
 import AuthGuard from '../components/AuthGuard';
+import { generateContentForBeats, formatAllBeatsForCopyPaste, type BeatContentData } from '../../lib/beat-content-generator';
 
 interface BeatRecord {
   id: string;
@@ -42,6 +43,10 @@ export default function ManageBeats() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [listing, setListing] = useState<string | null>(null);
+  const [generatingContent, setGeneratingContent] = useState(false);
+  const [showContentModal, setShowContentModal] = useState(false);
+  const [beatsContent, setBeatsContent] = useState<BeatContentData[]>([]);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     fetchBeats();
@@ -125,6 +130,42 @@ export default function ManageBeats() {
     }
   };
 
+  const generateContentForAllBeats = async () => {
+    setGeneratingContent(true);
+    try {
+      const content = await generateContentForBeats(beats);
+      setBeatsContent(content);
+      setShowContentModal(true);
+    } catch (error) {
+      console.error('Failed to generate content:', error);
+      alert('Failed to generate content for beats');
+    } finally {
+      setGeneratingContent(false);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      alert('Failed to copy to clipboard');
+    }
+  };
+
+  const copyAllContent = () => {
+    const allContent = formatAllBeatsForCopyPaste(beatsContent);
+    copyToClipboard(allContent);
+  };
+
+  const needsManualSetup = (beat: BeatRecord) => {
+    // Check if any Whop product IDs are missing or empty
+    return !beat.whopProductIds.basic || !beat.whopProductIds.premium || !beat.whopProductIds.unlimited ||
+           beat.whopProductIds.basic === '' || beat.whopProductIds.premium === '' || beat.whopProductIds.unlimited === '';
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -153,13 +194,24 @@ export default function ManageBeats() {
               <p className="text-gray-300">View and delete your beat listings</p>
             </div>
             
-            <Link
-              href="/manage/license-terms"
-              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-white font-medium transition-colors"
-            >
-              <Settings className="w-4 h-4" />
-              License Terms
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={generateContentForAllBeats}
+                disabled={generatingContent || beats.length === 0}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 px-4 py-2 rounded-lg text-white font-medium transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                {generatingContent ? 'Generating...' : 'Generate Content'}
+              </button>
+              
+              <Link
+                href="/manage/license-terms"
+                className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-white font-medium transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+                License Terms
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -183,7 +235,15 @@ export default function ManageBeats() {
                   )}
                   
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-white mb-2">{beat.title}</h3>
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-xl font-bold text-white">{beat.title}</h3>
+                      {needsManualSetup(beat) && (
+                        <span className="bg-yellow-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          Manual Setup Needed
+                        </span>
+                      )}
+                    </div>
                     
                     <div className="flex items-center gap-4 mb-4">
                       <a
@@ -268,6 +328,108 @@ export default function ManageBeats() {
             </div>
           </div>
         </div>
+
+        {/* Content Modal */}
+        {showContentModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                <h2 className="text-2xl font-bold text-white">Generated Content for Whop Products</h2>
+                <button
+                  onClick={() => setShowContentModal(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="p-6 overflow-y-auto max-h-[60vh]">
+                <div className="mb-4">
+                  <button
+                    onClick={copyAllContent}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <Copy className="w-4 h-4" />
+                    {copySuccess ? 'Copied!' : 'Copy All Content'}
+                  </button>
+                </div>
+                
+                <div className="space-y-6">
+                  {beatsContent.map((beat, index) => (
+                    <div key={beat.beatId} className="bg-gray-900 rounded-lg p-4">
+                      <h3 className="text-lg font-bold text-white mb-4">{beat.beatTitle}</h3>
+                      
+                      <div className="space-y-4">
+                        {/* Basic License */}
+                        <div className="border-l-4 border-green-500 pl-4">
+                          <h4 className="font-semibold text-green-400 mb-2">Basic License</h4>
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="text-gray-400">Title:</span>
+                              <span className="text-white ml-2">{beat.basic.title}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Headline:</span>
+                              <span className="text-white ml-2">{beat.basic.headline}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Description:</span>
+                              <div className="text-white mt-1 whitespace-pre-wrap bg-gray-800 p-2 rounded">
+                                {beat.basic.description}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Premium License */}
+                        <div className="border-l-4 border-blue-500 pl-4">
+                          <h4 className="font-semibold text-blue-400 mb-2">Premium License</h4>
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="text-gray-400">Title:</span>
+                              <span className="text-white ml-2">{beat.premium.title}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Headline:</span>
+                              <span className="text-white ml-2">{beat.premium.headline}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Description:</span>
+                              <div className="text-white mt-1 whitespace-pre-wrap bg-gray-800 p-2 rounded">
+                                {beat.premium.description}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Unlimited License */}
+                        <div className="border-l-4 border-purple-500 pl-4">
+                          <h4 className="font-semibold text-purple-400 mb-2">Unlimited License</h4>
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="text-gray-400">Title:</span>
+                              <span className="text-white ml-2">{beat.unlimited.title}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Headline:</span>
+                              <span className="text-white ml-2">{beat.unlimited.headline}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Description:</span>
+                              <div className="text-white mt-1 whitespace-pre-wrap bg-gray-800 p-2 rounded">
+                                {beat.unlimited.description}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AuthGuard>
   );
