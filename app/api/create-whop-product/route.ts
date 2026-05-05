@@ -38,13 +38,35 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "WHOP_COMPANY_ID not configured" }, { status: 500 });
     }
 
-    // Create the product using the correct SDK parameters
+    // Create product using correct SDK parameters with all required fields
     // Truncate name to fit within 40 character limit for title
     const shortName = name.length > 20 ? name.substring(0, 20) + "..." : name;
+    
+    // Generate headline and description using our content generator
+    const { generateWhopProductData } = await import("@/lib/whop-product-generator");
+    
+    // Get license terms from API
+    let licenseTerms;
+    try {
+      const licenseResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/license-terms`);
+      const licenseData = await licenseResponse.json();
+      licenseTerms = licenseData.terms;
+    } catch (error) {
+      console.error('Failed to fetch license terms:', error);
+      // Continue with basic description if license terms fetch fails
+    }
+    
+    let productData;
+    if (licenseTerms) {
+      productData = generateWhopProductData(name, licenseType as 'basic' | 'premium' | 'unlimited', licenseTerms);
+    }
+    
     const product = await whopsdk.products.create({
       company_id: companyId,
-      title: `${shortName} - ${licenseType}`,
-      description: license ?? undefined,
+      title: productData?.title || `${shortName} - ${licenseType}`,
+      headline: productData?.headline || `${licenseType} license for ${name}`,
+      description: productData?.description || license || `${licenseType} license for beat: ${name}`,
+      visibility: "visible",
     });
 
     // Explicitly create a one-time plan with price (Whop UI hides pricing if no plan)
